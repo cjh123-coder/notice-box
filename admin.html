@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>豐東國中 - 民意信箱管理後台</title>
+  <style>
+    body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; padding: 24px; background: #edf2f7; font-size: 18px; color: #2d3748; margin: 0; line-height: 1.7; }
+    .card { background: white; border-radius: 8px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    h2 { font-size: 26px; color: #2b6cb0; margin-top: 0; display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 2px solid #ebf8ff; }
+    h3 { font-size: 22px; }
+    .user-badge { font-size: 16px; background: #ebf8ff; color: #2b6cb0; padding: 6px 12px; border-radius: 20px; font-weight: bold; border: 1px solid #bee3f8; }
+    button { padding: 12px 18px; font-size: 19px; border: none; border-radius: 6px; background-color: #3182ce; color: white; cursor: pointer; transition: 0.2s; font-weight: bold; }
+    button:hover { background-color: #2b6cb0; }
+    .btn-outline { background: white; color: #4a5568; border: 1px solid #cbd5e0; }
+    .btn-outline:disabled { background: #edf2f7; color: #a0aec0; border-color: #e2e8f0; cursor: not-allowed; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 18px; font-size: 18px; }
+    th, td { border: 1px solid #e2e8f0; padding: 16px 14px; text-align: left; vertical-align: middle; }
+    th { background: #f7fafc; color: #4a5568; font-weight: bold; }
+    .status-badge { padding: 6px 14px; border-radius: 16px; font-size: 15px; font-weight: bold; display: inline-block; }
+    
+    .reassign-select { margin-top: 8px; width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 16px; font-family: inherit; }
+    
+    .hidden { display: none !important; }
+    #loader { position: fixed; top: 40%; left: 0; width: 100%; z-index: 9999; }
+    #loader h2 { justify-content: center; color: #718096; border: none; }
+    
+    .error-card { max-width: 500px; margin: 80px auto; text-align: center; padding: 40px; border-top: 5px solid #e53e3e; }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.45); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(2px); }
+    .modal-box { background: #ffffff; width: 92%; max-width: 780px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.18); overflow: hidden; animation: modalPop 0.2s ease-out; }
+    @keyframes modalPop { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .modal-header { background: #2b6cb0; color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+    .modal-header h3 { margin: 0; font-size: 22px; font-weight: bold; border: none; padding: 0; }
+    .modal-close-btn { background: transparent; border: none; color: white; font-size: 28px; cursor: pointer; line-height: 1; padding: 0 4px; }
+    .modal-body { padding: 24px; max-height: 75vh; overflow-y: auto; font-size: 18px; }
+    .case-summary-card { background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px 20px; font-size: 18px; }
+    .summary-line { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .modal-footer { padding: 16px 24px; background: #edf2f7; display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #e2e8f0; }
+
+    .settings-input { width: 100%; box-sizing: border-box; padding: 12px 14px; border: 1px solid #cbd5e0; border-radius: 4px; font-family: inherit; font-size: 18px; }
+    .settings-input:focus { outline: none; border-color: #3182ce; box-shadow: 0 0 0 1px #3182ce; }
+    .settings-select { width: 100%; box-sizing: border-box; padding: 12px 14px; border: 1px solid #cbd5e0; border-radius: 4px; font-family: inherit; font-size: 18px; background-color: #fff; }
+    
+    .btn-add { background: #edf2f7; color: #2b6cb0; border: 2px dashed #a0aec0; width: 100%; padding: 14px; margin-top: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 19px; transition: 0.2s; }
+    .btn-add:hover { background: #e2e8f0; border-color: #2b6cb0; }
+    
+    .btn-del { background: #fed7d7; color: #c53030; border: none; border-radius: 4px; padding: 8px 14px; cursor: pointer; font-size: 16px; font-weight: bold; }
+    .btn-del:hover { background: #fc8181; color: white; }
+    /* ✨ 批次刪除相關 */
+    .batch-checkbox { width:18px; height:18px; cursor:pointer; }
+    .btn-delete-single { background:#fff5f5; color:#c53030; border:1px solid #feb2b2; padding:6px 10px; font-size:14px; border-radius:5px; cursor:pointer; margin-top:6px; width:100%; }
+    .btn-delete-single:hover { background:#e53e3e; color:white; }
+    #batchToolbar.hidden { display:none !important; }
+
+    .switch { position: relative; display: inline-block; width: 50px; height: 28px; vertical-align: middle; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e0; transition: .3s; border-radius: 28px; }
+    .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    input:checked + .slider { background-color: #38a169; }
+    input:checked + .slider:before { transform: translateX(22px); }
+  </style>
+</head>
+<body>
+
+<!-- 載入中畫面 -->
+<div id="loader"><h2>系統驗證與載入中，請稍候...</h2></div>
+
+<!-- 無權限阻擋畫面 -->
+<div class="card error-card hidden" id="unauthorized-card">
+  <h2 style="color: #e53e3e; justify-content: center; margin-bottom: 20px;">存取權限受限</h2>
+  <p id="unauth-msg" style="font-size: 17px; line-height: 1.6; margin-bottom: 30px;"></p>
+  <button onclick="reloginSSO()">切換帳號重新登入</button>
+</div>
+
+<!-- 主管理介面 -->
+<div class="hidden" id="main-ui">
+  <div class="card">
+    <h2>
+      <span>豐東國中民意信箱 - 管理後台</span>
+      <div style="display: flex; align-items: center; gap: 12px; font-size: 18px;">
+        <span class="user-badge" id="userInfo"></span>
+        <button class="btn-outline hidden" id="btnTabSettings" onclick="switchAdminTab('settings')" style="border-color:#3182ce; color:#3182ce; padding: 8px 14px; font-size: 16px;">⚙️ 系統設定</button>
+        <button class="btn-outline hidden" id="btnTabCases" onclick="switchAdminTab('cases')" style="border-color:#38a169; color:#38a169; padding: 8px 14px; font-size: 16px;">📋 案件管理</button>
+        <button class="btn-outline hidden" id="btnTabRecycle" onclick="switchAdminTab('recycle')" style="border-color:#e53e3e; color:#e53e3e; padding: 8px 14px; font-size: 16px;">🗑️ 回收筒</button>
+        <button onclick="logout()" style="background-color: #e53e3e; color: white; border: none; padding: 8px 14px; font-size: 16px; border-radius: 6px; cursor: pointer;">安全登出</button>
+      </div>
+    </h2>
+  </div>
+
+  <!-- 案件管理區塊 -->
+  <div id="view-cases">
+    <div class="card">
+      
+      <!-- ✨ 全校管理員 批次刪除工具列 -->
+      <div id="batchToolbar" class="hidden" style="margin-bottom:15px; display:flex; justify-content:space-between; align-items:center; background:#fff5f5; border:1px solid #fed7d7; padding:12px 16px; border-radius:6px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <label style="display:flex; align-items:center; gap:6px; font-weight:bold; cursor:pointer;">
+            <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" class="batch-checkbox"> 全選本頁
+          </label>
+          <span id="selectedCount" style="font-size:15px; color:#c53030; font-weight:bold;">已選 0 筆</span>
+          <span style="font-size:13px; color:#718096;">(僅限全校管理員)</span>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button id="btnBatchDelete" onclick="deleteBatchCases()" style="background:#e53e3e; color:white; padding:10px 18px; font-size:16px; border-radius:6px; border:none; cursor:pointer; font-weight:bold;">🗑️ 批次移至回收筒</button>
+        </div>
+      </div>
+
+      <!-- 🔍 關鍵字搜尋框 -->
+      <div style="margin-bottom: 15px; display: flex; justify-content: flex-end;">
+        <input type="text" id="searchInput" onkeyup="filterCases()" placeholder="🔍 搜尋案件編號、姓名或主旨..." style="padding: 10px; width: 300px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 16px;">
+      </div>
+
+      <table id="caseTable">
+        <thead>
+          <tr>
+            <th id="thCheckbox" class="hidden" style="width:50px; text-align:center;"><input type="checkbox" id="headerSelectAll" onchange="toggleSelectAll(this)" class="batch-checkbox"></th>
+            <th style="width: 130px;">案件編號</th>
+            <th style="width: 100px;">日期</th>
+            <th style="width: 140px;">主責處室</th>
+            <th>主旨與內容</th>
+            <th style="width: 160px;">陳情人資訊</th>
+            <th style="width: 90px;">狀態</th>
+            <th style="width: 150px;">操作 (處理/結案)</th>
+          </tr>
+        </thead>
+        <tbody id="caseBody"></tbody>
+      </table>
+      
+      <!-- 分頁控制區塊 -->
+      <div id="pagination-controls" style="text-align: center; margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 15px;">
+        <button id="btnPrevPage" onclick="prevPage()" class="btn-outline" style="padding: 8px 16px; font-size: 16px;" disabled>上一頁</button>
+        <span id="pageInfo" style="font-size: 16px; font-weight: bold; color: #4a5568;">第 1 頁 / 共 1 頁</span>
+        <button id="btnNextPage" onclick="nextPage()" class="btn-outline" style="padding: 8px 16px; font-size: 16px;" disabled>下一頁</button>
+      </div>
+      
+    </div>
+  </div>
+
+  <!-- ✨ 資源回收筒區塊 (僅全校) -->
+  <div id="view-recycle" class="hidden">
+    <div class="card">
+      <h3 style="color:#e53e3e; border-bottom:2px solid #fed7d7; padding-bottom:10px; margin-top:0;">🗑️ 資源回收筒 - 已軟刪除案件 (最多顯示200筆)</h3>
+      <p style="color:#718096; font-size:14px;">說明：此處案件已從前台移除，但仍可還原或永久刪除。僅全校系統管理員可操作。</p>
+      
+      <div id="recycleToolbar" style="margin:15px 0; display:flex; justify-content:space-between; align-items:center; background:#fffaf0; border:1px solid #feebc8; padding:12px 16px; border-radius:6px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <label style="display:flex; align-items:center; gap:6px; font-weight:bold; cursor:pointer;">
+            <input type="checkbox" id="recycleSelectAll" onchange="toggleRecycleSelectAll(this)" class="batch-checkbox"> 全選本頁
+          </label>
+          <span id="recycleSelectedCount" style="font-size:15px; color:#c53030; font-weight:bold;">已選 0 筆</span>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button onclick="batchRestoreCases()" style="background:#38a169; color:white; padding:10px 18px; font-size:15px; border-radius:6px; border:none; cursor:pointer; font-weight:bold;">↩️ 批次還原</button>
+          <button onclick="batchPermanentDeleteCases()" style="background:#2d3748; color:white; padding:10px 18px; font-size:15px; border-radius:6px; border:none; cursor:pointer; font-weight:bold;">❌ 批次永久刪除</button>
+          <button onclick="fetchRecycleBin()" style="background:white; color:#4a5568; border:1px solid #cbd5e0; padding:10px 14px; font-size:14px; border-radius:6px; cursor:pointer;">🔄 重新整理</button>
+        </div>
+      </div>
+
+      <table id="recycleTable">
+        <thead>
+          <tr>
+            <th style="width:50px; text-align:center;"><input type="checkbox" id="recycleHeaderSelectAll" onchange="toggleRecycleSelectAll(this)" class="batch-checkbox"></th>
+            <th style="width:130px;">案件編號</th>
+            <th style="width:100px;">刪除時間</th>
+            <th style="width:140px;">原處室 / 刪除者</th>
+            <th>主旨與內容</th>
+            <th style="width:160px;">陳情人</th>
+            <th style="width:90px;">原狀態</th>
+            <th style="width:180px;">操作</th>
+          </tr>
+        </thead>
+        <tbody id="recycleBody"><tr><td colspan="8" style="text-align:center; padding:20px; color:#a0aec0;">尚未載入回收筒資料</td></tr></tbody>
+      </table>
+
+      <div id="recycle-pagination" style="text-align: center; margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 15px;">
+        <button id="btnRecyclePrev" onclick="recyclePrevPage()" class="btn-outline" style="padding: 8px 16px; font-size: 16px;" disabled>上一頁</button>
+        <span id="recyclePageInfo" style="font-size: 16px; font-weight: bold; color: #4a5568;">第 1 頁 / 共 1 頁</span>
+        <button id="btnRecycleNext" onclick="recycleNextPage()" class="btn-outline" style="padding: 8px 16px; font-size: 16px;" disabled>下一頁</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 系統設定區塊 -->
+  <div id="view-settings" class="hidden">
+    <div class="card">
+      <h3 style="color:#2b6cb0; border-bottom:2px solid #ebf8ff; padding-bottom:10px; margin-top:0;">系統參數設定 (僅限全校管理員)</h3>
+      <p style="color:#e53e3e; font-size:14px; font-weight:bold;">※ 編輯完成後，請務必點擊最下方的「儲存所有設定」才會生效。若不再需要某個項目，可直接點擊「移除」或將其切換為停用。</p>
+      
+      <div id="settingsContainer">
+        <h4 style="margin-top:25px; color:#4a5568;">1. 民眾身分類別</h4>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 65%;">身分類別名稱</th>
+              <th style="width: 20%; text-align:center;">狀態 (啟用/停用)</th>
+              <th style="width: 15%; text-align:center;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-identities"></tbody>
+        </table>
+        <button class="btn-add" onclick="addIdentityRow()">+ 新增身分類別</button>
+
+        <h4 style="margin-top:35px; color:#4a5568;">2. 議題與派案設定</h4>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 25%;">議題名稱</th>
+              <th style="width: 15%;">主責處室</th>
+              <th style="width: 20%;">主任 Email (必填)</th>
+              <th style="width: 18%;">副知 Email (選填)</th>
+              <th style="width: 12%; text-align:center;">狀態</th>
+              <th style="width: 10%; text-align:center;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-issues"></tbody>
+        </table>
+        <button class="btn-add" onclick="addIssueRow()">+ 新增議題與派案</button>
+
+        <h4 style="margin-top:35px; color:#4a5568;">3. 後台管理員白名單</h4>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 30%;">st 登入帳號 (Email)</th>
+              <th style="width: 25%;">姓名 / 職稱</th>
+              <th style="width: 18%;">管轄權限</th>
+              <th style="width: 15%; text-align:center;">狀態</th>
+              <th style="width: 12%; text-align:center;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-admins"></tbody>
+        </table>
+        <button class="btn-add" onclick="addAdminRow()">+ 新增管理員</button>
+      </div>
+      <div style="margin-top: 40px; text-align: center;">
+        <button onclick="saveSettings()" style="background:#38a169; color: white; border: none; border-radius: 6px; font-size:18px; padding:14px 40px; cursor: pointer; font-weight:bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">💾 儲存所有設定</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 案件處理與結案回覆 Modal 視窗 -->
+<div id="replyModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>豐東民意信箱 - 案件處理與結案回覆</h3>
+      <button class="modal-close-btn" onclick="closeReplyModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="case-summary-card">
+        <div class="summary-line">
+          <span><strong>案件編號：</strong><span id="modalCaseId" style="color:#2b6cb0; font-weight:bold;"></span></span>
+          <span><strong>當前狀態：</strong><span id="modalStatusBadge"></span></span>
+        </div>
+        <div class="summary-line">
+          <span><strong>主責處室：</strong><strong id="modalDept" style="color:#e53e3e;"></strong></span>
+          <span><strong>陳情人：</strong><span id="modalSubmitter"></span></span>
+        </div>
+        <div style="margin-top: 6px;"><strong>信件主旨：</strong><span id="modalSubject"></span></div>
+        <div style="margin-top: 6px; color:#4a5568; font-size:13px; max-height:85px; overflow-y:auto; background:#fff; padding:8px; border-radius:4px; border:1px solid #e2e8f0;">
+          <strong>陳情原文：</strong><span id="modalContent"></span>
+        </div>
+      </div>
+
+      <div style="margin-top: 16px;">
+        <label style="display:block; font-weight:bold; margin-bottom:6px; color:#2d3748;">
+          處理紀錄與結案說明 (民眾線上查詢及通知信將顯示此內容)：
+        </label>
+        <textarea id="modalReplyText" rows="6" style="width:100%; box-sizing:border-box; padding:10px; border:1.5px solid #cbd5e0; border-radius:6px; font-family:inherit; font-size:15px; resize:vertical;" placeholder="請輸入具體處理紀錄或結案說明..."></textarea>
+      </div>
+
+      <div style="margin-top: 14px; background:#ebf8ff; border:1px solid #bee3f8; padding:10px 14px; border-radius:6px; display:flex; align-items:center;">
+        <input type="checkbox" id="modalSendEmail" style="width:18px; height:18px; margin-right:10px; cursor:pointer;" checked>
+        <label for="modalSendEmail" style="cursor:pointer; font-size:14px; color:#2b6cb0; font-weight:bold; margin:0;">
+          同步寄發 Email 通知信給陳情人 (<span id="modalPetitionerEmail"></span>)
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeReplyModal()">取消</button>
+      <button onclick="submitModalReply(false)" style="background:#3182ce;" id="modalBtnSaveOnly">僅儲存回覆說明</button>
+      <button onclick="submitModalReply(true)" style="background:#38a169;" id="modalBtnCloseCase">確認結案並儲存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================= ⚠️ 請修改為您的 GAS API 網址 ⚠️ =================
+  const API_URL = "https://script.google.com/macros/s/AKfycbxBHJQkbBM0aXBXO9OPPaKdHZAV7fF8WodVj03u_HlZsEmKQZ-Zp5pvI7gf6iB4uSZ7/exec";
+  const SSO_LOGIN_URL = "https://sysop-coder.github.io/sso/"; 
+
+  const CASE_STATUS = {
+    PENDING_VERIFY: { label: '待驗證', bg: '#feebc8', color: '#c05621' },
+    VERIFIED:       { label: '已成案', bg: '#bee3f8', color: '#2b6cb0' },
+    PROCESSING:     { label: '處理中', bg: '#e9d8fd', color: '#6b46c1' },
+    SAVED_REPLY:    { label: '儲存回覆', bg: '#3182ce', color: '#ffffff' },
+    CLOSED:         { label: '已結案', bg: '#c6f6d5', color: '#22543d' },
+    REJECTED:       { label: '不成案', bg: '#fed7d7', color: '#c53030' }
+  };
+
+  function getStatusBadgeHtml(status) {
+    const normStatus = (status === '結案') ? '已結案' : status;
+    const config = Object.values(CASE_STATUS).find(s => s.label === normStatus) || { label: status, bg: '#3182ce', color: '#ffffff' };
+    return `<span class="status-badge" style="background:${config.bg}; color:${config.color}">${config.label}</span>`;
+  }
+
+  let g_sessionKey = localStorage.getItem('adminSessionKey');
+  let g_availableDepts = [];
+  let g_cases = [];
+  let g_filteredCases = []; // ✨ 存放搜尋過濾後的案件
+  let g_activeCaseId = null; 
+  let g_currentSettings = null; 
+  let g_currentUser = null; // ✨ 系統管理員判斷用
+  let g_isVerifyingToken = false;
+  
+  let currentPage = 1;
+  const itemsPerPage = 10;
+
+  window.onload = async function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const ssoToken = urlParams.get('token');
+
+    if (ssoToken) {
+      await processSSOToken(ssoToken); 
+    } else if (g_sessionKey) {
+      document.getElementById('loader').classList.add('hidden');
+      document.getElementById('main-ui').classList.remove('hidden');
+      document.getElementById('caseBody').innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 25px; color:#4a5568; font-weight:bold;">資料讀取中，請稍候... ⏳</td></tr>';
+      fetchCases();
+    } else {
+      reloginSSO();
+    }
+  };
+
+  function reloginSSO() {
+    localStorage.removeItem('adminSessionKey');
+    const returnUrl = encodeURIComponent(window.location.origin + window.location.pathname);
+    window.location.href = `${SSO_LOGIN_URL}?redirect=${returnUrl}`;
+  }
+
+  function logout() {
+    localStorage.removeItem('adminSessionKey');
+    window.location.reload();
+  }
+
+  // ✨ 單次極速驗證機制（無重試、有 Timeout 防護、強制清理網址）
+  async function processSSOToken(token) {
+    if (g_isVerifyingToken) return;
+    g_isVerifyingToken = true;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "verifySSO", token: token }),
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      const json = await res.json();
+      
+      if (json.success) {
+        g_sessionKey = json.sessionKey;
+        try { localStorage.setItem('adminSessionKey', g_sessionKey); } catch (e) { }
+        
+        window.history.replaceState({}, document.title, window.location.pathname);
+        g_isVerifyingToken = false;
+
+        document.getElementById('loader').classList.add('hidden');
+        document.getElementById('main-ui').classList.remove('hidden');
+        document.getElementById('userInfo').innerText = `${json.user.deptPerm} - ${json.user.name}`;
+        document.getElementById('caseBody').innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 25px; color:#4a5568; font-weight:bold;">身分驗證成功！案件資料讀取中... ⏳</td></tr>';
+
+        setTimeout(() => { fetchCases(); }, 300);
+        
+      } else if (json.message === "NOT_AUTHORIZED") {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        document.getElementById('loader').classList.add('hidden');
+        document.getElementById('unauthorized-card').classList.remove('hidden');
+        document.getElementById('unauth-msg').innerHTML = `您好，<strong>${json.displayName || '同仁'}</strong>（${json.email}）：<br>您的帳號目前<strong>尚未具備</strong>本信箱的管理查核權限。如需處理陳情案件，請聯繫校長室新增授權。`;
+        g_isVerifyingToken = false;
+      } else {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        alert("登入驗證失敗：" + json.message);
+        reloginSSO();
+      }
+
+    } catch (e) {
+      clearTimeout(timeoutId);
+      g_isVerifyingToken = false;
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      if (e.name === 'AbortError') {
+        alert("伺服器連線逾時（超過 15 秒），請檢查網路連線後重新登入。");
+      } else {
+        alert("網路連線不穩定或異常，請重新登入。");
+      }
+      reloginSSO();
+    }
+  }
+
+  async function fetchCases() {
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "adminFetchCases", sessionKey: g_sessionKey }),
+        headers: { "Content-Type": "text/plain;charset=utf-8" }
+      });
+      const json = await res.json();
+
+      if (json.success) {
+        g_cases = json.data;
+        g_filteredCases = [...g_cases]; // ✨ 剛載入時，過濾清單等於完整清單
+        g_availableDepts = json.availableDepts;
+        g_currentUser = json.user; // ✨ 儲存當前使用者
+        
+        document.getElementById('loader').classList.add('hidden');
+        document.getElementById('main-ui').classList.remove('hidden');
+        document.getElementById('userInfo').innerText = `${json.user.deptPerm} - ${json.user.name}`;
+        
+        if (json.user.deptPerm === '全校') {
+          document.getElementById('btnTabSettings').classList.remove('hidden');
+          document.getElementById('btnTabRecycle').classList.remove('hidden');
+          document.getElementById('batchToolbar').classList.remove('hidden');
+          document.getElementById('thCheckbox').classList.remove('hidden');
+        } else {
+          document.getElementById('batchToolbar').classList.add('hidden');
+          document.getElementById('thCheckbox').classList.add('hidden');
+          document.getElementById('btnTabRecycle').classList.add('hidden');
+        }
+
+        renderTable(g_filteredCases); // ✨ 改傳入過濾後的清單
+      } else {
+        alert("讀取案件失敗：" + json.message);
+        if (json.message && json.message.includes("登入逾時")) {
+          reloginSSO();
+        }
+      }
+    } catch (e) {
+      document.getElementById('caseBody').innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 25px; color:#e53e3e; font-weight:bold;">無法取得資料，請檢查網路連線後重新整理頁面。</td></tr>';
+    }
+  }
+
+  // 🔍 案件搜尋過濾機制
+  function filterCases() {
+    const keyword = document.getElementById('searchInput').value.toLowerCase().trim();
+    if (!keyword) {
+      g_filteredCases = [...g_cases]; 
+    } else {
+      g_filteredCases = g_cases.filter(c => 
+        (c.caseId && c.caseId.toLowerCase().includes(keyword)) ||
+        (c.name && c.name.toLowerCase().includes(keyword)) ||
+        (c.subject && c.subject.toLowerCase().includes(keyword)) ||
+        (c.content && c.content.toLowerCase().includes(keyword))
+      );
+    }
+    currentPage = 1;
+    renderTable(g_filteredCases);
+  }
+
+  function renderTable(cases) {
+    const tbody = document.getElementById('caseBody');
+
+    const totalPages = Math.ceil(cases.length / itemsPerPage) || 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const casesToShow = cases.slice(startIndex, endIndex);
+
+    const pageInfo = document.getElementById('pageInfo');
+    const btnPrev = document.getElementById('btnPrevPage');
+    const btnNext = document.getElementById('btnNextPage');
+    if (pageInfo) pageInfo.innerText = `第 ${currentPage} 頁 / 共 ${totalPages} 頁`;
+    if (btnPrev) btnPrev.disabled = (currentPage === 1);
+    if (btnNext) btnNext.disabled = (currentPage === totalPages);
+
+    const isSuperAdmin = g_currentUser && g_currentUser.deptPerm === '全校';
+
+    tbody.innerHTML = casesToShow.map(c => {
+      const deptOptions = g_availableDepts.map(d => `<option value="${d}" ${d===c.dept?'selected':''}>${d}</option>`).join('');
+      
+      let actionBtnText = '填寫回覆'; 
+      let actionBtnBg = '#38a169'; 
+      let showActionBtn = true; 
+      
+      if (c.status === CASE_STATUS.PENDING_VERIFY.label) {
+        showActionBtn = false; 
+      } else if (c.status === CASE_STATUS.PROCESSING.label) {
+        actionBtnText = '填寫回覆';
+      } else if (c.status === CASE_STATUS.SAVED_REPLY.label) {
+        actionBtnText = '下一步：結案';
+        actionBtnBg = '#3182ce'; 
+      } else if (c.status === CASE_STATUS.REJECTED.label) {
+        actionBtnText = '不成案';
+        actionBtnBg = '#e53e3e'; 
+      } else if (c.status === CASE_STATUS.CLOSED.label || c.status === '結案') {
+        actionBtnText = '已結案/變更修改';
+      }
+      
+      const hideProcessingBtn = (c.status === CASE_STATUS.PROCESSING.label || 
+                                 c.status === CASE_STATUS.SAVED_REPLY.label || 
+                                 c.status === CASE_STATUS.CLOSED.label || 
+                                 c.status === '結案' || 
+                                 c.status === CASE_STATUS.REJECTED.label);
+      
+      const processBtnHtml = hideProcessingBtn ? '' : `<button onclick="markProcessing('${c.caseId}')" style="padding:8px 12px; font-size:16px; margin-bottom:6px; width:100%; background:#805ad5; color:white; border:none; border-radius:6px; cursor:pointer;">標記處理中</button>`;      
+      const rejectBtnHtml = (c.status === CASE_STATUS.PENDING_VERIFY.label) ? `<button onclick="markRejected('${c.caseId}')" style="padding:8px 12px; font-size:16px; width:100%; background:#e53e3e; color:white; border:none; border-radius:6px; cursor:pointer;">不成案</button>` : '';
+      const actionBtnHtml = showActionBtn ? `<button onclick="openReplyModal('${c.caseId}')" style="padding:8px 12px; font-size:16px; background:${actionBtnBg}; width:100%; color:white; border:none; border-radius:6px; cursor:pointer;">${actionBtnText}</button>` : '';
+      // ✨ 刪除按鈕 (僅全校)
+      const deleteBtnHtml = isSuperAdmin ? `<button class="btn-delete-single" onclick="deleteSingleCase('${c.caseId}')">🗑️ 移至回收筒</button>` : '';
+      const checkboxHtml = isSuperAdmin ? `<td style="text-align:center;"><input type="checkbox" class="batch-checkbox row-checkbox" value="${c.caseId}" onchange="updateSelectedCount()"></td>` : '';
+
+      const baseRow = `
+        ${checkboxHtml}
+        <td><strong style="color:#2b6cb0;">${c.caseId}</strong></td>
+        <td>${c.createdAt}</td>
+        <td>
+          <strong style="color:#e53e3e">${c.dept}</strong>
+          <select class="reassign-select" id="dept_${c.caseId}" onchange="reassignCase('${c.caseId}', '${c.dept}')">
+            <option value="" disabled>--- 轉派案件 ---</option>
+            ${deptOptions}
+          </select>
+        </td>
+        <td style="max-width:280px;"><strong>${c.subject}</strong><br><small style="color:#4a5568;">${c.content}</small></td>
+        <td><strong>${c.name}</strong><br>${c.phone}</td>
+        <td>${getStatusBadgeHtml(c.status)}</td>
+        <td>${processBtnHtml}${rejectBtnHtml}${actionBtnHtml}${deleteBtnHtml}</td>
+      `;
+      return `<tr>${baseRow}</tr>`;
+    }).join('');
+
+    // 渲染後同步全選狀態
+    updateSelectedCount();
+  }
+
+  function prevPage() {
+    if (currentPage > 1) {
+      currentPage--;
+      renderTable(g_filteredCases); // ✨ 改為 g_filteredCases
+    }
+  }
+
+  function nextPage() {
+    const totalPages = Math.ceil(g_filteredCases.length / itemsPerPage) || 1;
+    if (currentPage < totalPages) {
+      currentPage++;
+      renderTable(g_filteredCases); // ✨ 改為 g_filteredCases
+    }
+  }
+
+  async function markProcessing(caseId) {
+    const c = g_cases.find(x => x.caseId === caseId);
+    if (c) { c.status = CASE_STATUS.PROCESSING.label; renderTable(g_filteredCases); } // ✨ 改為 g_filteredCases
+    executeUpdateRequest(caseId, CASE_STATUS.PROCESSING.label, null, null, false);
+  }
+
+  async function markRejected(caseId) {
+    if (!confirm("確定要將此案件直接標記為「不成案」嗎？")) return;
+    const c = g_cases.find(x => x.caseId === caseId);
+    if (c) { c.status = CASE_STATUS.REJECTED.label; renderTable(g_filteredCases); } // ✨ 改為 g_filteredCases
+    executeUpdateRequest(caseId, CASE_STATUS.REJECTED.label, null, null, false);
+  }
+
+  function openReplyModal(caseId) {
+    const c = g_cases.find(x => x.caseId === caseId);
+    if (!c) return;
+    if (c.status === CASE_STATUS.PENDING_VERIFY.label) { alert('此案件尚未完成 Email 驗證，無法進行結案回覆！'); return; }
+    
+    g_activeCaseId = caseId;
+    
+    document.getElementById('modalCaseId').innerText = c.caseId;
+    document.getElementById('modalStatusBadge').innerHTML = getStatusBadgeHtml(c.status);
+    document.getElementById('modalDept').innerText = c.dept;
+    document.getElementById('modalSubmitter').innerText = `${c.name} (${c.phone})`;
+    document.getElementById('modalSubject').innerText = c.subject;
+    document.getElementById('modalContent').innerText = c.content;
+    document.getElementById('modalPetitionerEmail').innerText = c.email || '未提供信箱';
+    document.getElementById('modalReplyText').value = c.reply || '';
+
+    const sendEmailCheckbox = document.getElementById('modalSendEmail');
+    if (!c.email) { sendEmailCheckbox.checked = false; sendEmailCheckbox.disabled = true; } 
+    else { sendEmailCheckbox.disabled = false; sendEmailCheckbox.checked = true; }
+    document.getElementById('replyModal').classList.remove('hidden');
+  }
+
+  function closeReplyModal() {
+    document.getElementById('replyModal').classList.add('hidden');
+    g_activeCaseId = null;
+  }
+
+  async function submitModalReply(isCloseCase) {
+    if (!g_activeCaseId) return;
+    const replyNotes = document.getElementById('modalReplyText').value.trim();
+    const sendEmailToUser = document.getElementById('modalSendEmail').checked;
+    
+    if (isCloseCase && !replyNotes) {
+      if (!confirm("您尚未填寫任何處理紀錄或結案說明，確定要直接結案嗎？")) return;
+    }
+
+    const newStatus = isCloseCase ? CASE_STATUS.CLOSED.label : CASE_STATUS.SAVED_REPLY.label;
+    const targetCaseId = g_activeCaseId; 
+    closeReplyModal();
+    
+    const c = g_cases.find(x => x.caseId === targetCaseId);
+    if (c) {
+      c.status = newStatus;
+      if (replyNotes) c.reply = replyNotes;
+      renderTable(g_filteredCases); // ✨ 改為 g_filteredCases
+    }
+    executeUpdateRequest(targetCaseId, newStatus, replyNotes, null, sendEmailToUser);
+  }
+
+  async function reassignCase(caseId, oldDept) {
+    const selectEl = document.getElementById(`dept_${caseId}`);
+    const newDept = selectEl.value;
+    if (newDept === oldDept) return;
+    if (!confirm(`確定要將此案件由【${oldDept}】轉派給【${newDept}】嗎？\n系統將會自動寄送通知信給新處室主任。`)) {
+      selectEl.value = oldDept;
+      return;
+    }
+    const c = g_cases.find(x => x.caseId === caseId);
+    if (c) { c.dept = newDept; renderTable(g_filteredCases); } // ✨ 改為 g_filteredCases
+    executeUpdateRequest(caseId, null, null, newDept, false);
+  }
+
+  async function executeUpdateRequest(caseId, status, note, newDept, sendEmailToUser) {
+    try {
+      const payload = { action: "adminUpdateCase", sessionKey: g_sessionKey, caseId: caseId };
+      if (status) payload.status = status;
+      if (note !== null && note !== undefined) payload.replyNotes = note;
+      if (newDept) payload.newDept = newDept;
+      if (sendEmailToUser) payload.sendEmailToUser = true;
+
+      const res = await fetch(API_URL, {
+        method: "POST", body: JSON.stringify(payload),
+        headers: { "Content-Type": "text/plain;charset=utf-8" }
+      });
+      const json = await res.json();
+      if (json.success) fetchCases(); 
+      else alert("更新失敗: " + json.message);
+    } catch (e) { alert("連線失敗，請檢查網路。"); }
+  }
+  
+  // ================= ✨ 單筆與批次刪除 (僅限全校) =================
+  function toggleSelectAll(source) {
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    checkboxes.forEach(cb => cb.checked = source.checked);
+    // 同步兩個全選框
+    document.getElementById('selectAllCheckbox').checked = source.checked;
+    document.getElementById('headerSelectAll').checked = source.checked;
+    updateSelectedCount();
+  }
+
+  function updateSelectedCount() {
+    const checked = document.querySelectorAll('.row-checkbox:checked');
+    const countEl = document.getElementById('selectedCount');
+    if (countEl) countEl.innerText = `已選 ${checked.length} 筆`;
+    const btn = document.getElementById('btnBatchDelete');
+    if (btn) btn.disabled = checked.length === 0;
+  }
+
+  async function deleteSingleCase(caseId) {
+    if (!g_currentUser || g_currentUser.deptPerm !== '全校') {
+      alert('權限不足：僅限全校系統管理員可刪除案件');
+      return;
+    }
+    if (!confirm(`⚠️ 確定要將案件移至回收筒【${caseId}】嗎？\n此動作無法復原，相關驗證連結與冷卻鎖也會一併清除！`)) return;
+    // 二次確認
+    if (!confirm(`再次確認：移至回收筒 ${caseId} ？請謹慎操作。`)) return;
+
+    await executeDeleteRequest(caseId);
+  }
+
+  async function deleteBatchCases() {
+    if (!g_currentUser || g_currentUser.deptPerm !== '全校') {
+      alert('權限不足：僅限全校系統管理員可執行批次刪除');
+      return;
+    }
+    const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+    const caseIds = Array.from(checkedBoxes).map(cb => cb.value);
+    if (caseIds.length === 0) {
+      alert('請先勾選要刪除的案件');
+      return;
+    }
+    if (caseIds.length > 50) {
+      alert('批次刪除上限為 50 筆，請分批操作');
+      return;
+    }
+    if (!confirm(`⚠️ 確定要批次將以下 ${caseIds.length} 筆案件移至回收筒嗎？\n\n${caseIds.join(', ')}\n\n可在回收筒還原！`)) return;
+
+    await executeBatchDeleteRequest(caseIds);
+  }
+
+  async function executeDeleteRequest(caseId) {
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "adminDeleteCase", sessionKey: g_sessionKey, caseId: caseId }),
+        headers: { "Content-Type": "text/plain;charset=utf-8" }
+      });
+      const json = await res.json();
+      if (json.success) {
+        alert(`✅ 案件 ${caseId} 已移至回收筒`);
+        // 前端立即移除
+        g_cases = g_cases.filter(c => c.caseId !== caseId);
+        g_filteredCases = g_filteredCases.filter(c => c.caseId !== caseId);
+        renderTable(g_filteredCases);
+      } else {
+        alert("刪除失敗：" + json.message);
+      }
+    } catch (e) {
+      alert("連線失敗，請檢查網路後重試");
+    }
+  }
+
+  async function executeBatchDeleteRequest(caseIds) {
+    const btn = document.getElementById('btnBatchDelete');
+    const originalText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = '移至回收筒中... ⏳';
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "adminBatchDeleteCases", sessionKey: g_sessionKey, caseIds: caseIds }),
+        headers: { "Content-Type": "text/plain;charset=utf-8" }
+      });
+      const json = await res.json();
+      if (json.success) {
+        const successCount = json.data ? json.data.successCount : caseIds.length;
+        alert(`✅ 已將 ${successCount} 筆案件移至回收筒`);
+        const idSet = new Set(caseIds);
+        g_cases = g_cases.filter(c => !idSet.has(c.caseId));
+        g_filteredCases = g_filteredCases.filter(c => !idSet.has(c.caseId));
+        document.getElementById('selectAllCheckbox').checked = false;
+        document.getElementById('headerSelectAll').checked = false;
+        renderTable(g_filteredCases);
+      } else {
+        alert("批次操作失敗：" + json.message);
+      }
+    } catch (e) {
+      alert("連線失敗，請檢查網路後重試");
+    } finally {
+      btn.disabled = false;
+      btn.innerText = originalText;
+    }
+  }
+
+  // ================= ✨ 資源回收筒功能 =================
+  let g_recycleCases = [];
+  let g_recycleFiltered = [];
+  let recycleCurrentPage = 1;
+  const recycleItemsPerPage = 10;
+
+  async function fetchRecycleBin() {
+    if (!g_currentUser || g_currentUser.deptPerm !== '全校') {
+      alert('僅限全校管理員可查看回收筒');
+      return;
+    }
+    document.getElementById('recycleBody').innerHTML = '<tr><td colspan="8" style="text-align:center; padding:25px;">回收筒資料讀取中... ⏳</td></tr>';
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "adminFetchRecycleBin", sessionKey: g_sessionKey }),
+        headers: { "Content-Type": "text/plain;charset=utf-8" }
+      });
+      const json = await res.json();
+      if (json.success) {
+        g_recycleCases = json.data || [];
+        g_recycleFiltered = [...g_recycleCases];
+        recycleCurrentPage = 1;
+        renderRecycleTable(g_recycleFiltered);
+      } else {
+        alert("讀取回收筒失敗：" + json.message);
+      }
+    } catch (e) {
+      document.getElementById('recycleBody').innerHTML = '<tr><td colspan="8" style="text-align:center; color:#e53e3e;">連線失敗</td></tr>';
+    }
+  }
+
+  function renderRecycleTable(cases) {
+    const tbody = document.getElementById('recycleBody');
+    const totalPages = Math.ceil(cases.length / recycleItemsPerPage) || 1;
+    if (recycleCurrentPage > totalPages) recycleCurrentPage = totalPages;
+    if (recycleCurrentPage < 1) recycleCurrentPage = 1;
+    const start = (recycleCurrentPage - 1) * recycleItemsPerPage;
+    const end = start + recycleItemsPerPage;
+    const pageCases = cases.slice(start, end);
+
+    document.getElementById('recyclePageInfo').innerText = `第 ${recycleCurrentPage} 頁 / 共 ${totalPages} 頁`;
+    document.getElementById('btnRecyclePrev').disabled = recycleCurrentPage === 1;
+    document.getElementById('btnRecycleNext').disabled = recycleCurrentPage === totalPages;
+
+    if (pageCases.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:#a0aec0;">回收筒目前沒有資料</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = pageCases.map(c => {
+      return `<tr>
+        <td style="text-align:center;"><input type="checkbox" class="batch-checkbox recycle-checkbox" value="${c.caseId}" onchange="updateRecycleCount()"></td>
+        <td><strong style="color:#2b6cb0;">${escapeHtml(c.caseId)}</strong></td>
+        <td>${escapeHtml(c.deletedAt||'')}<br><small style="color:#718096;">${escapeHtml(c.deletedByName||c.deletedBy||'')}</small></td>
+        <td><strong style="color:#e53e3e">${escapeHtml(c.dept||'')}</strong><br><small>原狀態:${escapeHtml(c.originalStatus||c.status||'')}</small></td>
+        <td style="max-width:280px;"><strong>${escapeHtml(c.subject||'')}</strong><br><small style="color:#4a5568;">${escapeHtml((c.content||'').substring(0,80))}</small></td>
+        <td><strong>${escapeHtml(c.name||'')}</strong><br>${escapeHtml(c.phone||'')}</td>
+        <td>${getStatusBadgeHtml(c.originalStatus||c.status||'')}</td>
+        <td>
+          <button onclick="restoreSingleCase('${c.caseId}')" style="padding:6px 10px; font-size:14px; background:#38a169; color:white; border:none; border-radius:5px; width:100%; margin-bottom:6px; cursor:pointer;">↩️ 還原</button>
+          <button onclick="permanentDeleteSingleCase('${c.caseId}')" style="padding:6px 10px; font-size:14px; background:#2d3748; color:white; border:none; border-radius:5px; width:100%; cursor:pointer;">❌ 永久刪除</button>
+        </td>
+      </tr>`;
+    }).join('');
+    updateRecycleCount();
+  }
+
+  function recyclePrevPage() { if (recycleCurrentPage>1){ recycleCurrentPage--; renderRecycleTable(g_recycleFiltered); } }
+  function recycleNextPage() { const total=Math.ceil(g_recycleFiltered.length/recycleItemsPerPage)||1; if(recycleCurrentPage<total){ recycleCurrentPage++; renderRecycleTable(g_recycleFiltered); } }
+
+  function toggleRecycleSelectAll(source) {
+    document.querySelectorAll('.recycle-checkbox').forEach(cb=>cb.checked=source.checked);
+    document.getElementById('recycleSelectAll').checked = source.checked;
+    document.getElementById('recycleHeaderSelectAll').checked = source.checked;
+    updateRecycleCount();
+  }
+  function updateRecycleCount() {
+    const cnt = document.querySelectorAll('.recycle-checkbox:checked').length;
+    const el = document.getElementById('recycleSelectedCount');
+    if (el) el.innerText = `已選 ${cnt} 筆`;
+  }
+
+  async function restoreSingleCase(caseId) {
+    if (!confirm(`確定要還原案件 ${caseId} 回主區嗎？`)) return;
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "adminRestoreCase", sessionKey: g_sessionKey, caseId: caseId }),
+        headers: { "Content-Type": "text/plain;charset=utf-8" }
+      });
+      const json = await res.json();
+      if (json.success) {
+        alert(`✅ 已還原 ${caseId}`);
+        g_recycleCases = g_recycleCases.filter(c=>c.caseId!==caseId);
+        g_recycleFiltered = g_recycleFiltered.filter(c=>c.caseId!==caseId);
+        renderRecycleTable(g_recycleFiltered);
+        // 同步主列表
+        fetchCases();
+      } else alert("還原失敗："+json.message);
+    } catch (e) { alert("連線失敗"); }
+  }
+
+  async function permanentDeleteSingleCase(caseId) {
+    if (!confirm(`⚠️ 永久刪除 ${caseId}？此動作無法復原！`)) return;
+    const input = prompt('請輸入「永久刪除」以確認：');
+    if (input !== '永久刪除') { alert('已取消'); return; }
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "adminPermanentDeleteCase", sessionKey: g_sessionKey, caseId: caseId }),
+        headers: { "Content-Type": "text/plain;charset=utf-8" }
+      });
+      const json = await res.json();
+      if (json.success) {
+        alert(`🗑️ 已永久刪除 ${caseId}`);
+        g_recycleCases = g_recycleCases.filter(c=>c.caseId!==caseId);
+        g_recycleFiltered = g_recycleFiltered.filter(c=>c.caseId!==caseId);
+        renderRecycleTable(g_recycleFiltered);
+      } else alert("刪除失敗："+json.message);
+    } catch (e) { alert("連線失敗"); }
+  }
+
+  async function batchRestoreCases() {
+    const ids = Array.from(document.querySelectorAll('.recycle-checkbox:checked')).map(cb=>cb.value);
+    if (ids.length===0){ alert('請先勾選'); return; }
+    if (!confirm(`確定還原 ${ids.length} 筆案件？`)) return;
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "adminBatchRestoreCases", sessionKey: g_sessionKey, caseIds: ids }),
+        headers: { "Content-Type": "text/plain;charset=utf-8" }
+      });
+      const json = await res.json();
+      if (json.success) {
+        alert(`✅ 已還原 ${json.data.successCount} 筆`);
+        const set = new Set(ids);
+        g_recycleCases = g_recycleCases.filter(c=>!set.has(c.caseId));
+        g_recycleFiltered = g_recycleFiltered.filter(c=>!set.has(c.caseId));
+        renderRecycleTable(g_recycleFiltered);
+        fetchCases();
+      } else alert("批次還原失敗："+json.message);
+    } catch (e) { alert("連線失敗"); }
+  }
+
+  async function batchPermanentDeleteCases() {
+    const ids = Array.from(document.querySelectorAll('.recycle-checkbox:checked')).map(cb=>cb.value);
+    if (ids.length===0){ alert('請先勾選'); return; }
+    if (!confirm(`⚠️ 確定要永久刪除 ${ids.length} 筆？無法復原！`)) return;
+    const input = prompt('請輸入「永久刪除」以確認批次永久刪除：');
+    if (input !== '永久刪除'){ alert('已取消'); return; }
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "adminBatchPermanentDeleteCases", sessionKey: g_sessionKey, caseIds: ids }),
+        headers: { "Content-Type": "text/plain;charset=utf-8" }
+      });
+      const json = await res.json();
+      if (json.success) {
+        alert(`🗑️ 已永久刪除 ${json.data.successCount} 筆`);
+        const set = new Set(ids);
+        g_recycleCases = g_recycleCases.filter(c=>!set.has(c.caseId));
+        g_recycleFiltered = g_recycleFiltered.filter(c=>!set.has(c.caseId));
+        renderRecycleTable(g_recycleFiltered);
+      } else alert("批次刪除失敗："+json.message);
+    } catch (e) { alert("連線失敗"); }
+  }
+
+  function escapeHtml(text) {
+    return (text || '').toString()
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+  }
+
+  function generateId(prefix) { 
+    return prefix + '_' + Math.random().toString(36).substr(2, 8); 
+  }
+
+  function switchAdminTab(tab) {
+    if (tab === 'settings') {
+      document.getElementById('view-cases').classList.add('hidden');
+      document.getElementById('view-recycle').classList.add('hidden');
+      document.getElementById('view-settings').classList.remove('hidden');
+      document.getElementById('btnTabSettings').classList.add('hidden');
+      document.getElementById('btnTabCases').classList.remove('hidden');
+      document.getElementById('btnTabRecycle').classList.remove('hidden');
+      
+      if (!g_currentSettings) {
+        loadSettings();
+      }
+    } else if (tab === 'recycle') {
+      document.getElementById('view-cases').classList.add('hidden');
+      document.getElementById('view-settings').classList.add('hidden');
+      document.getElementById('view-recycle').classList.remove('hidden');
+      document.getElementById('btnTabSettings').classList.remove('hidden');
+      document.getElementById('btnTabCases').classList.remove('hidden');
+      document.getElementById('btnTabRecycle').classList.add('hidden');
+      fetchRecycleBin();
+    } else {
+      document.getElementById('view-settings').classList.add('hidden');
+      document.getElementById('view-recycle').classList.add('hidden');
+      document.getElementById('view-cases').classList.remove('hidden');
+      document.getElementById('btnTabCases').classList.add('hidden');
+      document.getElementById('btnTabSettings').classList.remove('hidden');
+      document.getElementById('btnTabRecycle').classList.remove('hidden');
+    }
+  }
+
+  async function loadSettings() {
+    const btn = document.getElementById('btnTabCases');
+    btn.innerText = '讀取中...';
+    btn.disabled = true;
+
+    document.getElementById('tbody-identities').innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#4a5568; font-weight:bold;">資料讀取中，請稍候... ⏳</td></tr>';
+    document.getElementById('tbody-issues').innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#4a5568; font-weight:bold;">資料讀取中，請稍候... ⏳</td></tr>';
+    document.getElementById('tbody-admins').innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#4a5568; font-weight:bold;">資料讀取中，請稍候... ⏳</td></tr>';
+
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "adminGetSettings", sessionKey: g_sessionKey }),
+        headers: { "Content-Type": "text/plain;charset=utf-8" }
+      });
+      const json = await res.json();
+
+      if (json.success) {
+        g_currentSettings = json.data || { identities: {}, issues: {}, admins: {} };
+        renderAllSettings();
+      } else {
+        alert("讀取設定失敗：" + json.message);
+        renderAllSettings();
+      }
+    } catch (e) {
+      document.getElementById('tbody-identities').innerHTML = '<tr><td colspan="3" style="text-align:center; color:#e53e3e; padding:15px;">連線失敗，請重新整理頁面</td></tr>';
+      document.getElementById('tbody-issues').innerHTML = '<tr><td colspan="6" style="text-align:center; color:#e53e3e; padding:15px;">連線失敗，請重新整理頁面</td></tr>';
+      document.getElementById('tbody-admins').innerHTML = '<tr><td colspan="5" style="text-align:center; color:#e53e3e; padding:15px;">連線失敗，請重新整理頁面</td></tr>';
+    } finally {
+      btn.innerText = '📋 案件管理';
+      btn.disabled = false;
+    }
+  }
+
+  function renderAllSettings() {
+    document.getElementById('tbody-identities').innerHTML = '';
+    document.getElementById('tbody-issues').innerHTML = '';
+    document.getElementById('tbody-admins').innerHTML = '';
+    
+    if (!g_currentSettings) return;
+
+    let hasIdentities = false, hasIssues = false, hasAdmins = false;
+
+    if (g_currentSettings.identities) {
+      Object.values(g_currentSettings.identities).forEach(data => { addIdentityRow(data); hasIdentities = true; });
+    }
+    if (g_currentSettings.issues) {
+      Object.values(g_currentSettings.issues).forEach(data => { addIssueRow(data); hasIssues = true; });
+    }
+    if (g_currentSettings.admins) {
+      Object.values(g_currentSettings.admins).forEach(data => { addAdminRow(data); hasAdmins = true; });
+    }
+
+    if (!hasIdentities) {
+      document.getElementById('tbody-identities').innerHTML = '<tr><td colspan="3" style="text-align:center; color:#718096; padding:15px;">尚無資料，請點擊下方新增</td></tr>';
+    }
+    if (!hasIssues) {
+      document.getElementById('tbody-issues').innerHTML = '<tr><td colspan="6" style="text-align:center; color:#718096; padding:15px;">尚無資料，請點擊下方新增</td></tr>';
+    }
+    if (!hasAdmins) {
+      document.getElementById('tbody-admins').innerHTML = '<tr><td colspan="5" style="text-align:center; color:#718096; padding:15px;">尚無資料，請點擊下方新增</td></tr>';
+    }
+  }
+
+  function removeRow(btn) {
+    btn.closest('tr').remove();
+  }
+
+  function addIdentityRow(data = { id: generateId('id'), name: '', active: true }) {
+    const tr = document.createElement('tr');
+    tr.className = 'row-identity';
+    tr.dataset.id = data.id;
+    tr.innerHTML = `
+      <td><input type="text" class="settings-input input-name" value="${escapeHtml(data.name)}" placeholder="例如：本校學生"></td>
+      <td style="text-align:center;">
+        <label class="switch"><input type="checkbox" class="input-active" ${data.active ? 'checked' : ''}><span class="slider"></span></label>
+      </td>
+      <td style="text-align:center;"><button class="btn-del" onclick="removeRow(this)">移除</button></td>
+    `;
+    document.getElementById('tbody-identities').appendChild(tr);
+  }
+
+  function addIssueRow(data = { id: generateId('iss'), name: '', dept: '教務處', directorEmail: '', ccEmail: '', active: true }) {
+    const depts = ['教務處', '學務處', '總務處', '輔導室', '校長室'];
+    const deptSelect = `<select class="settings-select input-dept">${depts.map(d => `<option value="${d}" ${d === data.dept ? 'selected' : ''}>${d}</option>`).join('')}</select>`;
+    
+    const tr = document.createElement('tr');
+    tr.className = 'row-issue';
+    tr.dataset.id = data.id;
+    tr.innerHTML = `
+      <td><input type="text" class="settings-input input-name" value="${escapeHtml(data.name)}" placeholder="議題名稱"></td>
+      <td>${deptSelect}</td>
+      <td><input type="email" class="settings-input input-director" value="${escapeHtml(data.directorEmail)}" placeholder="公務 Email"></td>
+      <td><input type="email" class="settings-input input-cc" value="${escapeHtml(data.ccEmail)}" placeholder="選填"></td>
+      <td style="text-align:center;">
+        <label class="switch"><input type="checkbox" class="input-active" ${data.active ? 'checked' : ''}><span class="slider"></span></label>
+      </td>
+      <td style="text-align:center;"><button class="btn-del" onclick="removeRow(this)">移除</button></td>
+    `;
+    document.getElementById('tbody-issues').appendChild(tr);
+  }
+
+  function addAdminRow(data = { email: '', name: '', deptPerm: '全校', active: true }) {
+    const perms = ['全校', '全部處室', '教務處', '學務處', '總務處', '輔導室', '校長室'];
+    const permSelect = `<select class="settings-select input-deptPerm">${perms.map(d => `<option value="${d}" ${d === data.deptPerm ? 'selected' : ''}>${d}</option>`).join('')}</select>`;
+    
+    const tr = document.createElement('tr');
+    tr.className = 'row-admin';
+    tr.innerHTML = `
+      <td><input type="email" class="settings-input input-email" value="${escapeHtml(data.email)}" placeholder="帳號 Email"></td>
+      <td><input type="text" class="settings-input input-name" value="${escapeHtml(data.name)}" placeholder="姓名或職稱"></td>
+      <td>${permSelect}</td>
+      <td style="text-align:center;">
+        <label class="switch"><input type="checkbox" class="input-active" ${data.active ? 'checked' : ''}><span class="slider"></span></label>
+      </td>
+      <td style="text-align:center;"><button class="btn-del" onclick="removeRow(this)">移除</button></td>
+    `;
+    document.getElementById('tbody-admins').appendChild(tr);
+  }
+
+  async function saveSettings() {
+    if (!confirm("確定要儲存並覆寫所有系統設定嗎？民眾端選單也會同步更新。")) return;
+    
+    const newSettings = { identities: {}, issues: {}, admins: {} };
+
+    document.querySelectorAll('#tbody-identities .row-identity').forEach(row => {
+      const id = row.dataset.id;
+      const name = row.querySelector('.input-name').value.trim();
+      const active = row.querySelector('.input-active').checked;
+      if (name) newSettings.identities[id] = { id, name, active };
+    });
+
+    document.querySelectorAll('#tbody-issues .row-issue').forEach(row => {
+      const id = row.dataset.id;
+      const name = row.querySelector('.input-name').value.trim();
+      const dept = row.querySelector('.input-dept').value;
+      const directorEmail = row.querySelector('.input-director').value.trim().toLowerCase();
+      const ccEmail = row.querySelector('.input-cc').value.trim().toLowerCase();
+      const active = row.querySelector('.input-active').checked;
+      if (name && directorEmail) {
+        newSettings.issues[id] = { id, name, dept, directorEmail, ccEmail, active };
+      }
+    });
+
+    document.querySelectorAll('#tbody-admins .row-admin').forEach(row => {
+      const email = row.querySelector('.input-email').value.trim().toLowerCase();
+      const name = row.querySelector('.input-name').value.trim();
+      const deptPerm = row.querySelector('.input-deptPerm').value;
+      const active = row.querySelector('.input-active').checked;
+      if (email && name) {
+        const key = email.replace(/\./g, '_');
+        newSettings.admins[key] = { email, name, deptPerm, active };
+      }
+    });
+
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "adminSaveSettings", sessionKey: g_sessionKey, data: newSettings }),
+        headers: { "Content-Type": "text/plain;charset=utf-8" }
+      });
+      const json = await res.json();
+
+      if (json.success) {
+        alert("✅ 系統參數已成功儲存！");
+        loadSettings();
+      } else {
+        alert("儲存失敗：" + json.message);
+      }
+    } catch (e) {
+      alert("❌ 儲存失敗！連線發生錯誤。");
+    }
+  }
+</script>
+</body>
+</html>
